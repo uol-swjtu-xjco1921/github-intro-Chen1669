@@ -5,7 +5,7 @@ CFLAGS = -Wall -Wextra -std=c99
 SRCS = $(wildcard *.c)
 OBJS = $(SRCS:.c=.o)
 
-maze: $(OBJS)
+mazegen: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:
