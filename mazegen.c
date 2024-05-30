@@ -36,11 +36,14 @@ int create_maze(maze *this, int height, int width)
     this->height = height;
     this->width = width;
     this->map = malloc(height * sizeof(char *));
-    for (int i = 0; i < height; i++) {
-        this->map[i] = malloc((width + 1) * sizeof(char)); 
-        for(int j=0;j<width;j++){
-            this->map[i][j]='#';
+    for (int i = 0; i < height; i++)
+    {
+        this->map[i] = malloc((width + 1) * sizeof(char));
+        for (int j = 0; j < width; j++)
+        {
+            this->map[i][j] = '#';
         }
+        this->map[i][width] = '\0'; // Null-terminate the string
     }
     return 0;
 }
@@ -66,48 +69,73 @@ void shuffle(coord *array, int n) {
     }
 }
 //creat passage
-void passage(int cx, int cy, maze *this) {
+void passage(int cx, int cy, maze *this)
+{
     coord directions[] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-    shuffle(directions, 4);//move randomly
-    
-    for (int i = 0; i < 4; i++) {
-        int nx = cx + directions[i].x * 2;
-        int ny = cy + directions[i].y * 2;//move 2
+    shuffle(directions, 4); // Move randomly
 
-        if (nx >= 0 && ny >= 0 && nx < this->width && ny < this->height && this->map[ny][nx] == '#') {
-            this->map[ny][nx] = ' ';
-            this->map[cy + directions[i].y][cx + directions[i].x] = ' ';
-            passage(nx, ny, this);//make sure moving is useful and change'#' to ' '
+    for (int i = 0; i < 4; i++)
+    {
+        int step = 2; // Initial step size
+
+        while (step > 0)
+        {
+            int nx = cx + directions[i].x * step;
+            int ny = cy + directions[i].y * step;
+
+            if (nx > 0 && ny > 0 && nx < this->width - 1 && ny < this->height - 1 && this->map[ny][nx] == '#')
+            {
+                this->map[ny][nx] = ' ';
+                this->map[cy + directions[i].y][cx + directions[i].x] = ' ';
+                passage(nx, ny, this); // Recursively explore from the new position
+            }
+            else
+            {
+                break; // Stop moving in this direction if hitting boundary or already visited cell
+            }
+
+            step--; // Decrease step size
         }
     }
 }
 
+
 //save the maze
-void generate_maze(maze *m) {
-    create_maze(m, m->width, m->height);
+void generate_maze(maze *m)
+{
+    create_maze(m, m->height, m->width);
+    // Ensure start and end points are not at the edges
     m->start.x = 1;
     m->start.y = 1;
     m->end.x = m->width - 2;
     m->end.y = m->height - 2;
 
-    m->map[m->start.y][m->start.x] = 'S';
-    m->map[m->end.y][m->end.x] = 'E';//provide initial data
-
+    m->map[m->start.y][m->start.x] = ' ';
     passage(m->start.x, m->start.y, m);
+    
+    m->map[m->end.y][m->end.x] = ' ';
+
+    // If the end point is blocked, generate a path to it
+    if (m->map[m->end.y][m->end.x] == '#') {
+        passage(m->end.x, m->end.y, m);
+    }
+
+    m->map[m->start.y][m->start.x] = 'S';
+    m->map[m->end.y][m->end.x] = 'E';
 }
 
-void save_maze(maze *m, const char *filename) {
+void save_maze(maze *m, const char *filename)
+{
     FILE *file = fopen(filename, "w");
-    if (!file) {
+    if (!file)
+    {
         perror("Error opening file");
         exit(EXIT_FAILURE);
     }
 
-    for (int i = 0; i < m->height; i++) {
-        for (int j = 0; j < m->width; j++) {
-            fputc(m->map[i][j], file);
-        }
-        fputc('\n', file);
+    for (int i = 0; i < m->height; i++)
+    {
+        fprintf(file, "%s\n", m->map[i]);
     }
 
     fclose(file);
@@ -117,7 +145,7 @@ void save_maze(maze *m, const char *filename) {
 int main(int argc, char *argv[]) {
     if (argc != 4) {
         fprintf(stderr, "Usage: %s <filename> <width> <height>\n", argv[0]);
-        return EXIT_FAILURE;
+        return EXIT_ARG_ERROR;
     }
 
     char *filename = argv[1];
@@ -142,4 +170,3 @@ int main(int argc, char *argv[]) {
 
     return EXIT_SUCCESS;
 }
-
